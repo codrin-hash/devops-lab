@@ -29,4 +29,4 @@ curl -X POST localhost:8000/apps -H 'Content-Type: application/json' \
 
 ## Documentation
 
-Start at [docs/](docs/readme).
+Start at [docs/](docs/readme.md).
