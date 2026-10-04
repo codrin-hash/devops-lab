@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import uuid
 from pathlib import Path
+import signal
+import threading
 
 from common import queue
 from common.config import settings
@@ -65,12 +67,20 @@ def process(dep_id: uuid.UUID) -> None:
     # IDP-3: build + run, until then the pipeline stops here.
     set_status(dep_id, DeployStatus.building, commit_sha=sha)
 
+stop = threading.Event()
+
+
+def _request_stop(signum, _frame) -> None:
+    log.info("received %s, finishing current job then exiting", signal.Signals(signum).name)
+    stop.set()
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    signal.signal(signal.SIGTERM, _request_stop)
+    signal.signal(signal.SIGINT, _request_stop)
     WORKSPACE.mkdir(parents=True, exist_ok=True)
     log.info("worker started, workspace=%s", WORKSPACE)
-    while True:
+    while not stop.is_set():
         job = queue.dequeue()
         if job is None:
             continue
@@ -85,6 +95,7 @@ def main() -> None:
                 log.exception("could not mark %s as failed", job)
         finally:
             queue.ack(job)
+    log.info("worker stopped")
 
 
 if __name__ == "__main__":

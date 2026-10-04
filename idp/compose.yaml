@@ -32,6 +32,8 @@ services:
   worker:
     image: idp/platform:dev
     pull_policy: never
+    init: true
+    stop_grace_period: 30s
     command: ["python3", "-m", "worker.main"]
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
