@@ -1,6 +1,7 @@
 # ADR-0010: Persist before enqueue
 
-Status: Accepted
+- Status: Accepted
+- Date: 2026-10-04
 
 ## Context
 
@@ -10,13 +11,13 @@ A deploy request writes a row to Postgres and pushes its id to Redis. The two wr
 
 Commit the deployment row first, then `LPUSH` the id.
 
+## Alternatives considered
+
+- **Enqueue first.** The worker can pop the id before the row is visible, drop the job, and leave the deployment in `queued` forever. Intermittent and hard to reproduce.
+- **Transactional outbox.** Write the job to an outbox table in the same transaction and relay it to Redis asynchronously. Correct, but adds a relay process.
+- **Postgres as the queue** (`SELECT ... FOR UPDATE SKIP LOCKED`). Removes the dual write entirely; Redis is kept for log streams in later stages.
+
 ## Consequences
 
-- Reverse order is a race: the worker can pop the id before the row is visible, drop the job, and leave the deployment in `queued` forever. Intermittent and hard to reproduce.
-- With this order, a Redis failure after commit returns 500 but leaves a `queued` row in Postgres. State is visible and recoverable because Postgres is the source of truth.
-- Recovery is not implemented. Planned: a reconciler that re-enqueues `queued` deployments older than N seconds (GAP-001).
-
-## Alternatives
-
-- Transactional outbox: write the job to an outbox table in the same transaction, relay to Redis asynchronously.
-- Postgres as the queue (`SELECT ... FOR UPDATE SKIP LOCKED`): removes the dual write entirely.
+- A Redis failure after commit returns 500 but leaves a `queued` row in Postgres. State is visible and recoverable because Postgres is the source of truth.
+- Recovery is not implemented. Planned: a reconciler that re-enqueues `queued` deployments older than N seconds.

@@ -11,6 +11,8 @@
 | [0007](0007-docker-assigned-ports.md) | Host ports assigned by Docker | Accepted |
 | [0008](0008-image-tags-and-labels.md) | Commit-based image tags, label-based discovery | Accepted |
 | [0009](0009-start-before-stop-redeploy.md) | Start-before-stop redeploy | Accepted |
+| [0010](0010-persist-before-enqueue.md) | Persist before enqueue | Accepted |
+| [0011](0011-worker-graceful-shutdown.md) | Worker graceful shutdown | Accepted |
 
 ## Template
 
