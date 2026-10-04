@@ -1,22 +1,22 @@
 import uuid
-from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Response
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from api.schemas import AppCreate, AppOut, DeploymentOut
+from api.schemas import AppCreate, AppOut
 from common.db import Base, engine, get_session
-from common.models import App, Deployment
-from common.queue import enqueue
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    Base.metadata.create_all(engine)  # TD-002: no migrations yet
-    yield
+from common.models import App
 
 app = FastAPI(title="idp")
+
+
+@app.on_event("startup")
+def init_db() -> None:
+    # Datorie tehnica: create_all nu face migrari. Alembic vine cand schema se schimba.
+    Base.metadata.create_all(engine)
+
 
 @app.get("/healthz")
 def healthz(response: Response, db: Session = Depends(get_session)):
@@ -51,28 +51,3 @@ def get_app(app_id: uuid.UUID, db: Session = Depends(get_session)):
     if obj is None:
         raise HTTPException(404, "app not found")
     return obj
-
-@app.post("/apps/{app_id}/deploys", response_model=DeploymentOut, status_code=202)
-def create_deploy(app_id: uuid.UUID, session: Session = Depends(get_session)):
-    if session.get(App, app_id) is None:
-        raise HTTPException(404, "app not found")
-    dep = Deployment(app_id=app_id)
-    session.add(dep)
-    session.commit()
-    session.refresh(dep)
-    enqueue(str(dep.id))
-    return dep
-
-@app.get("/apps/{app_id}/deploys", response_model=list[DeploymentOut])
-def list_deploys(app_id: uuid.UUID, session: Session = Depends(get_session)):
-    if session.get(App, app_id) is None:
-        raise HTTPException(404, "app not found")
-    stmt = select(Deployment).where(Deployment.app_id == app_id).order_by(Deployment.created_at.desc())
-    return session.scalars(stmt).all()
-
-@app.get("/deploys/{deploy_id}", response_model=DeploymentOut)
-def get_deploy(deploy_id: uuid.UUID, session: Session = Depends(get_session)):
-    dep = session.get(Deployment, deploy_id)
-    if dep is None:
-        raise HTTPException(404, "deployment not found")
-    return dep

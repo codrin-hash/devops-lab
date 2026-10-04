@@ -34,11 +34,3 @@
 **Cause:** `test` is empty or lacks the executor prefix.
 - `CMD` runs without a shell, so there is no variable expansion.
 - `CMD-SHELL` runs through `/bin/sh -c`. Use `$$VAR` to defer expansion from Compose to the container.
-
-## Container exits with `exec: "CMD": executable file not found`
-
-`command` in compose is the argv of the process; the first element is the executable. `CMD` and `CMD-SHELL` are type markers valid only in `healthcheck.test`, where Docker interprets them (`CMD`: exec directly, `CMD-SHELL`: run via `/bin/sh -c`, `NONE`: disable).
-
-## `docker compose stop worker` takes 10 s
-
-PID 1 in a PID namespace does not receive signals it has no handler for. Python installs a handler only for SIGINT, so SIGTERM is dropped and Docker sends SIGKILL after the grace period. Check with `grep SigCgt /proc/1/status` (SIGTERM is bit `0x4000`). Fixed by a SIGTERM handler in the worker and `init: true` in compose.

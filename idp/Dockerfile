@@ -4,20 +4,13 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends git \
- && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY common/ common/
 COPY api/ api/
-COPY worker/ worker/
 
-RUN useradd --create-home --uid 10001 idp \
- && mkdir /workspace \
- && chown idp:idp /workspace
+RUN useradd --create-home --uid 10001 idp
 USER idp
 
 EXPOSE 8000
