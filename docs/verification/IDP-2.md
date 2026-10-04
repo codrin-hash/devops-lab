@@ -9,9 +9,9 @@ Status: in progress
 | 3 | Nonexistent repo fails with git stderr, worker survives | Pass | GitHub asks for credentials; private and nonexistent repos are indistinguishable |
 | 4 | Nonexistent branch fails with clear error | Pass | `Remote branch nope not found` |
 | 5 | Clones present in workspace volume | Pass | |
-| 6 | Idle worker stops in under 2 s | Fail | 10.37 s; `SigCgt` 0x2, no SIGTERM handler on PID 1 |
-| 7 | Kill during clone leaves observable state (GAP-001) | Pending | |
-| 8 | No `on_event` deprecation warning | Pending | |
+| 6 | Idle worker stops in under 2 s | Pass | 0.58 s (was 10.37 s); tini as PID 1, SIGTERM handled with drain |
+| 7 | Kill during clone leaves observable state (GAP-001) | Documented | Deployment stuck in `cloning`; id left in `idp:processing`; partial `.git` in workspace; restarted worker does not recover the job |
+| 8 | No `on_event` deprecation warning | Pass | |
 
 ## Issues found during implementation
 
