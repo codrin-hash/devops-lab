@@ -17,6 +17,7 @@ services:
 
   api:
     build: .
+    image: idp/platform:dev
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
@@ -24,9 +25,29 @@ services:
       - "8000:8000"
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_started
 
+  worker:
+    image: idp/platform:dev
+    pull_policy: never
+    init: true
+    stop_grace_period: 30s
+    command: ["python3", "-m", "worker.main"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - workspace:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+
+
 volumes:
   pgdata:
+  workspace:
