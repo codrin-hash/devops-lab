@@ -15,6 +15,7 @@ class DeployStatus(str, enum.Enum):
     starting = "starting"
     running = "running"
     failed = "failed"
+    stopped = "stopped"
 
 
 class App(Base):

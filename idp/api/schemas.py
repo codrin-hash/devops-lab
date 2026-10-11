@@ -39,3 +39,4 @@ class DeploymentOut(BaseModel):
     error: str | None
     created_at: datetime
     updated_at: datetime
+    container_id: str | None
